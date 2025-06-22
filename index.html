@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: #000;
+            color: #00ff00;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .terminal-text {
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+        }
+        
+        .terminal-box {
+            border: 1px solid #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            background-color: rgba(0, 20, 0, 0.3);
+        }
+        
+        #video-container {
+            position: relative;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        #face-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        
+        #webcam {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(0, 255, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #00ff00;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-inactive {
+            background-color: #ff0000;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .btn {
+            background-color: rgba(0, 50, 0, 0.7);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: rgba(0, 80, 0, 0.9);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+        }
+        
+        .btn:active {
+            transform: translateY(2px);
+        }
+        
+        .input-field {
+            background-color: rgba(0, 20, 0, 0.3);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+        }
+        
+        /* Typewriter effect */
+        .typewriter h1 {
+            overflow: hidden;
+            border-right: .15em solid #00ff00;
+            white-space: nowrap;
+            margin: 0 auto;
+            letter-spacing: .15em;
+            animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #00ff00; }
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .typewriter h1 {
+                font-size: 1.5rem;
+                letter-spacing: .1em;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <div class="typewriter mb-2">
+                <h1 class="text-2xl md:text-4xl font-bold terminal-text inline-block">FACIAL RECOGNITION SYSTEM</h1>
+            </div>
+            <p class="terminal-text text-sm md:text-base">INITIALIZING BIOMETRIC IDENTIFICATION PROTOCOL</p>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Video Feed Section -->
+            <div class="flex-1">
+                <div class="terminal-box rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <span class="status-indicator status-active" id="status-indicator"></span>
+                            <span class="text-sm md:text-base font-bold">LIVE FEED</span>
+                        </div>
+                        <div class="text-xs md:text-sm" id="fps-counter">FPS: --</div>
+                    </div>
+                    
+                    <div id="video-container" class="relative">
+                        <video id="webcam" autoplay muted playsinline></video>
+                        <canvas id="face-canvas"></canvas>
+                    </div>
+                </div>
+                
+                <div class="terminal-box rounded-lg p-4">
+                    <h3 class="text-sm md:text-base font-bold mb-2">SYSTEM STATUS</h3>
+                    <div id="status-log" class="text-xs md:text-sm h-24 overflow-y-auto terminal-text"></div>
+                </div>
+            </div>
+            
+            <!-- Controls Section -->
+            <div class="md:w-80">
+                <div class="terminal-box rounded-lg p-4 mb-4">
+                    <h3 class="text-sm md:text-base font-bold mb-4">RECOGNITION CONTROLS</h3>
+                    
+                    <div class="mb-4">
+                        <button id="toggle-webcam" class="btn w-full py-2 px-4 rounded text-sm md:text-base">
+                            STOP CAMERA
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button id="toggle-recognition" class="btn w-full py-2 px-4 rounded text-sm md:text-base">
+                            PAUSE RECOGNITION
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Add New Face Section -->
+                <div class="terminal-box rounded-lg p-4">
+                    <h3 class="text-sm md:text-base font-bold mb-4">ADD NEW IDENTITY</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs md:text-sm mb-2">NAME IDENTIFIER:</label>
+                        <input type="text" id="new-face-label" class="input-field w-full py-2 px-3 rounded text-sm" placeholder="Enter name">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button id="capture-face" class="btn w-full py-2 px-4 rounded text-sm md:text-base">
+                            CAPTURE CURRENT FACE
+                        </button>
+                    </div>
+                    
+                    <div id="reference-faces" class="mt-4">
+                        <h4 class="text-xs md:text-sm mb-2">STORED IDENTITIES:</h4>
+                        <ul id="faces-list" class="text-xs space-y-1"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="terminal-text text-lg mb-2">LOADING NEURAL NETWORK</p>
+            <p id="loading-status" class="terminal-text text-sm">Initializing face detection models...</p>
+        </div>
+    </div>
+    <!-- Add this for face preview -->
+    <div id="face-preview" class="mb-4"></div>
+    <script src="script.js"></script>
+ 
+</html>
