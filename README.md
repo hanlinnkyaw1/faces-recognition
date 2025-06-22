@@ -17,9 +17,3 @@ A simple real-time face recognition website using **face-api.js**, built with HT
 - [face-api.js](https://github.com/justadudewhohacks/face-api.js)
 - HTML5 + CSS3 + JavaScript (Vanilla)
 - Webcam access via WebRTC
-
-## 📸 Demo
-
-![Face Recognition Demo](screenshot.png)
-
-## 🧰 Project Structure
